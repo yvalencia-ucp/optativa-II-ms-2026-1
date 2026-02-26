@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Semana 4 — Docker: Introducción</title>
+  <style>
+    :root{
+      --bg: #0b1020;
+      --card: rgba(255,255,255,0.06);
+      --card2: rgba(255,255,255,0.10);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.70);
+      --muted2: rgba(255,255,255,0.55);
+      --accent: #38bdf8; /* sky-ish */
+      --accent2:#22c55e; /* green-ish */
+      --warning:#f59e0b;
+      --danger:#fb7185;
+      --border: rgba(255,255,255,0.12);
+      --shadow: 0 20px 60px rgba(0,0,0,.45);
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    *{ box-sizing: border-box; }
+    html, body{ height: 100%; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(56,189,248,.18), transparent 55%),
+        radial-gradient(900px 600px at 85% 20%, rgba(34,197,94,.15), transparent 55%),
+        radial-gradient(900px 700px at 30% 90%, rgba(168,85,247,.12), transparent 60%),
+        linear-gradient(180deg, #070a14, var(--bg));
+      overflow: hidden;
+    }
+
+    /* Layout */
+    .deck{
+      position: relative;
+      height: 100%;
+      width: 100%;
+      padding: clamp(12px, 2.2vw, 28px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .slide{
+      width: min(1100px, 96vw);
+      height: min(640px, 78vh);
+      background: linear-gradient(180deg, var(--card), rgba(255,255,255,0.04));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(18px, 3vw, 44px);
+      position:absolute;
+      inset:auto;
+      opacity:0;
+      transform: translateY(16px) scale(0.99);
+      transition: opacity .24s ease, transform .24s ease;
+      pointer-events:none;
+      display:flex;
+      flex-direction:column;
+      gap: 18px;
+    }
+    .slide.active{
+      opacity:1;
+      transform: translateY(0) scale(1);
+      pointer-events:auto;
+    }
+
+    /* Slide typography */
+    .kicker{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size: 14px;
+      color: var(--muted);
+      letter-spacing: .4px;
+      text-transform: uppercase;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 0 4px rgba(56,189,248,.12);
+    }
+    h1, h2{
+      margin:0;
+      line-height:1.08;
+      letter-spacing:-0.02em;
+    }
+    h1{ font-size: clamp(32px, 4vw, 56px); }
+    h2{ font-size: clamp(26px, 3.1vw, 44px); }
+
+    p{
+      margin:0;
+      color: var(--muted);
+      font-size: clamp(16px, 1.4vw, 20px);
+      line-height:1.5;
+      max-width: 72ch;
+    }
+
+    ul{
+      margin: 0;
+      padding-left: 1.1em;
+      color: var(--text);
+      font-size: clamp(16px, 1.35vw, 20px);
+      line-height:1.45;
+    }
+    li{ margin: 8px 0; }
+    li span.muted{ color: var(--muted); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+      align-items:start;
+    }
+    @media (max-width: 900px){
+      .slide{ height: min(680px, 84vh); }
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--card2), rgba(255,255,255,0.04));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .card h3{
+      margin: 0 0 8px 0;
+      font-size: 16px;
+      letter-spacing:.3px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    pre{
+      margin:0;
+      padding: 14px 16px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      overflow:auto;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.45;
+      color: rgba(255,255,255,0.90);
+      max-height: 360px;
+    }
+    code{
+      font-family: var(--mono);
+      background: rgba(0,0,0,0.28);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: .95em;
+    }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(56,189,248,.35);
+      background: rgba(56,189,248,.10);
+      color: rgba(255,255,255,0.92);
+      font-size: 13px;
+      letter-spacing:.2px;
+      width: fit-content;
+    }
+
+    /* Footer controls */
+    .hud{
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+      pointer-events:none;
+    }
+    .hud .left, .hud .right{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      pointer-events:auto;
+    }
+    .btn{
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 600;
+      letter-spacing:.2px;
+      display:inline-flex;
+      align-items:center;
+      gap: 10px;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+    .btn:hover{ background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.22); }
+    .btn:active{ transform: translateY(1px); }
+    .progress{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing:.2px;
+    }
+    .bar{
+      width: min(340px, 42vw);
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.12);
+      overflow:hidden;
+    }
+    .bar > span{
+      display:block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .hint{
+      color: var(--muted2);
+      font-size: 12px;
+    }
+    .kbd{
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+      font-size: 12px;
+    }
+
+    /* Print support (optional) */
+    @media print{
+      body{ overflow: visible; background: white; color: black; }
+      .deck{ padding: 0; }
+      .slide{
+        position: relative;
+        page-break-after: always;
+        opacity:1 !important;
+        transform:none !important;
+        pointer-events:auto !important;
+        width: 100%;
+        height: auto;
+        min-height: 95vh;
+        box-shadow:none;
+        border: 1px solid #ddd;
+        background: white;
+        color: black;
+      }
+      pre, code{ background: #f6f6f6; color: #111; border-color: #ddd; }
+      .hud{ display:none; }
+      .kicker{ color: #333; }
+      p{ color:#333; }
+      .card{ background: #fafafa; border-color:#ddd; }
+      .tag{ border-color:#0ea5e9; background:#e0f2fe; color:#0b1020; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <!-- Slide 0 -->
+    <section class="slide active" data-title="Portada">
+      <div class="kicker"><span class="dot"></span> Optativa II (Microservicios) · Semana 4</div>
+      <h1>Docker: contenedores, imágenes, redes y volúmenes</h1>
+      <p>Objetivo: entender qué es Docker, por qué se usa y cómo levantar un entorno mínimo con imagen, contenedor, red privada y volumen.</p>
+      <div class="tag">2 horas · Intro + demos · Base para Compose</div>
+    </section>
+
+    <!-- Slide 1 -->
+    <section class="slide" data-title="Agenda">
+      <div class="kicker"><span class="dot"></span> Agenda</div>
+      <h2>Lo que veremos hoy</h2>
+      <ul>
+        <li>Problema que resuelve Docker</li>
+        <li>Conceptos: imagen, contenedor, Dockerfile, registry</li>
+        <li>Flujo de trabajo: <code>build → run → logs → exec → stop</code></li>
+        <li>Redes: comunicación entre contenedores (red privada)</li>
+        <li>Volúmenes: persistencia (no perder datos)</li>
+        <li>Mini-demo guiada</li>
+        <li>Tarea (taller) para terminar en casa</li>
+      </ul>
+    </section>
+
+    <!-- Slide 2 -->
+    <section class="slide" data-title="Problema">
+      <div class="kicker"><span class="dot"></span> Motivación</div>
+      <h2>¿Qué problema resuelve Docker?</h2>
+      <ul>
+        <li><strong>“En mi máquina sí funciona”</strong> → diferencias de OS, versiones y dependencias</li>
+        <li>Tiempo perdido configurando entornos</li>
+        <li>Replicar el mismo ambiente en equipo / servidor</li>
+        <li>Aislamiento: correr varios servicios sin conflicto (puertos, librerías)</li>
+      </ul>
+      <div class="card">
+        <h3>Ejemplos típicos</h3>
+        <p>Node 18 vs 20 · PostgreSQL 15 vs 16 · librerías nativas · herramientas distintas por sistema operativo</p>
+      </div>
+    </section>
+
+    <!-- Slide 3 -->
+    <section class="slide" data-title="VM vs Contenedores">
+      <div class="kicker"><span class="dot"></span> Concepto</div>
+      <h2>Virtualización vs Contenedores</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Máquinas virtuales (VM)</h3>
+          <ul>
+            <li>Incluyen un sistema operativo completo</li>
+            <li>Más pesadas (RAM/CPU/Disco)</li>
+            <li>Arranque más lento</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Contenedores</h3>
+          <ul>
+            <li>Comparten el kernel del host</li>
+            <li>Más livianos y rápidos</li>
+            <li>Portables: “empaquetan” app + dependencias</li>
+            <li><span class="muted">Aislamiento ≠ seguridad absoluta</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 4 -->
+    <section class="slide" data-title="Glosario">
+      <div class="kicker"><span class="dot"></span> Vocabulario</div>
+      <h2>Conceptos clave (1 minuto)</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Build & Run</h3>
+          <ul>
+            <li><strong>Imagen</strong>: plantilla inmutable por capas</li>
+            <li><strong>Contenedor</strong>: instancia ejecutándose</li>
+            <li><strong>Dockerfile</strong>: receta para construir</li>
+            <li><strong>Registry</strong>: repositorio de imágenes</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Infra</h3>
+          <ul>
+            <li><strong>Volumen</strong>: persistencia fuera del contenedor</li>
+            <li><strong>Red</strong>: comunicación entre contenedores (DNS interno)</li>
+          </ul>
+          <p style="margin-top:10px;color:var(--muted);">Meta: entender cómo se conectan servicios tipo <code>api</code> y <code>db</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5 -->
+    <section class="slide" data-title="Motor Docker">
+      <div class="kicker"><span class="dot"></span> Cómo funciona</div>
+      <h2>Anatomía mental de Docker</h2>
+      <ul>
+        <li><strong>Docker Engine</strong>: motor que construye y ejecuta</li>
+        <li><strong>Cliente (CLI)</strong>: <code>docker ...</code></li>
+        <li><strong>Daemon</strong>: gestiona imágenes, contenedores, redes, volúmenes</li>
+        <li><strong>Build context</strong>: carpeta enviada al motor durante <code>docker build</code></li>
+      </ul>
+      <div class="card">
+        <h3>Idea clave</h3>
+        <p>Cuando haces <code>docker build</code>, Docker usa los archivos del “contexto” para crear capas reutilizables.</p>
+      </div>
+    </section>
+
+    <!-- Slide 6 -->
+    <section class="slide" data-title="6 comandos">
+      <div class="kicker"><span class="dot"></span> Flujo mínimo</div>
+      <h2>El flujo mínimo en 6 comandos</h2>
+      <div class="grid">
+        <div>
+          <ul>
+            <li><code>docker pull</code> <span class="muted">traer base</span></li>
+            <li><code>docker build</code> <span class="muted">construir imagen</span></li>
+            <li><code>docker run</code> <span class="muted">crear + iniciar contenedor</span></li>
+            <li><code>docker logs</code> <span class="muted">ver salida</span></li>
+            <li><code>docker exec</code> <span class="muted">entrar al contenedor</span></li>
+            <li><code>docker stop</code> / <code>docker rm</code> <span class="muted">apagar/limpiar</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Regla de oro</h3>
+          <p>Si algo falla: <strong>logs primero</strong>. Luego revisa puertos, variables y red.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 7 -->
+    <section class="slide" data-title="Demo 1">
+      <div class="kicker"><span class="dot"></span> Demo 1</div>
+      <h2>Correr un contenedor listo</h2>
+      <p>Prueba rápida para confirmar que Docker funciona y entender flags.</p>
+      <pre><span># Hello World</span>
+docker run --rm hello-world
+
+<span># Linux mínimo (Alpine) en modo interactivo</span>
+docker run -it --rm alpine sh
+
+<span># Ver contenedores</span>
+docker ps
+docker ps -a</pre>
+      <div class="card">
+        <h3>Aprendizajes</h3>
+        <ul>
+          <li><code>--rm</code> elimina el contenedor al terminar</li>
+          <li><code>-it</code> permite interacción (terminal)</li>
+          <li><code>ps</code> vs <code>ps -a</code> (activos vs todos)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Slide 8 -->
+    <section class="slide" data-title="Dockerfile">
+      <div class="kicker"><span class="dot"></span> Dockerfile</div>
+      <h2>Primera receta — Node “Hola Mundo”</h2>
+      <p>Objetivo: construir una imagen que exponga un servidor HTTP sencillo.</p>
+      <pre>FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+EXPOSE 3000
+CMD ["node","server.js"]</pre>
+      <div class="card">
+        <h3>Clave</h3>
+        <p>El orden importa para el cache: copiar <code>package*.json</code> antes acelera builds.</p>
+      </div>
+    </section>
+
+    <!-- Slide 9 -->
+    <section class="slide" data-title="Capas & Cache">
+      <div class="kicker"><span class="dot"></span> Performance</div>
+      <h2>Capas y cache (por qué el orden importa)</h2>
+      <ul>
+        <li>Cada instrucción del Dockerfile crea una <strong>capa</strong></li>
+        <li>Si una capa no cambia, Docker la <strong>reutiliza</strong> (cache)</li>
+        <li>Patrón recomendado: dependencias primero, luego código</li>
+      </ul>
+      <div class="card">
+        <h3>Ejemplo</h3>
+        <p>Cambiar un <code>.js</code> no debería obligar a reinstalar dependencias si el Dockerfile está bien ordenado.</p>
+      </div>
+    </section>
+
+    <!-- Slide 10 -->
+    <section class="slide" data-title="Env Vars">
+      <div class="kicker"><span class="dot"></span> Configuración</div>
+      <h2>Variables de entorno</h2>
+      <ul>
+        <li><code>-e KEY=value</code> al ejecutar</li>
+        <li><code>--env-file .env</code> para cargar varias</li>
+        <li>No “hardcodear” secretos en la imagen</li>
+        <li>Config por ambiente: dev vs prod</li>
+      </ul>
+      <pre><span># Ejemplo</span>
+docker run -p 3000:3000 \
+  -e PORT=3000 \
+  -e DB_HOST=db \
+  mi-api:dev</pre>
+    </section>
+
+    <!-- Slide 11 -->
+    <section class="slide" data-title="Puertos">
+      <div class="kicker"><span class="dot"></span> Networking básico</div>
+      <h2>Puertos: host vs contenedor</h2>
+      <ul>
+        <li><code>-p 8080:3000</code> → <strong>host:contenedor</strong></li>
+        <li>Varios contenedores pueden exponer el mismo puerto interno</li>
+        <li>Los conflictos ocurren en el <strong>puerto del host</strong></li>
+      </ul>
+      <div class="card">
+        <h3>Idea clave</h3>
+        <p>El contenedor puede escuchar siempre en <code>3000</code>; el host decide el puerto real.</p>
+      </div>
+    </section>
+
+    <!-- Slide 12 -->
+    <section class="slide" data-title="Redes">
+      <div class="kicker"><span class="dot"></span> Redes privadas</div>
+      <h2>Comunicación entre contenedores</h2>
+      <ul>
+        <li>Por defecto existe red <code>bridge</code></li>
+        <li>Mejor práctica: crear una red por proyecto</li>
+        <li>En la misma red: resolución por nombre (DNS interno)</li>
+        <li><strong>Dentro del contenedor</strong>, <code>localhost</code> es el contenedor mismo</li>
+      </ul>
+      <pre><span># Crear red</span>
+docker network create micro-net
+
+<span># Conectar servicios a la red</span>
+docker run -d --name db --network micro-net postgres:16
+docker run -it --rm --network micro-net alpine sh</pre>
+    </section>
+
+    <!-- Slide 13 -->
+    <section class="slide" data-title="Volúmenes">
+      <div class="kicker"><span class="dot"></span> Persistencia</div>
+      <h2>Volúmenes: no perder datos</h2>
+      <ul>
+        <li>Sin volumen: al borrar contenedor, se pierden datos</li>
+        <li>Con volumen: persistencia fuera del ciclo del contenedor</li>
+        <li>Caso típico: PostgreSQL, Mongo, uploads</li>
+      </ul>
+      <pre><span># Crear y usar volumen</span>
+docker volume create pgdata
+docker run -d --name db -v pgdata:/var/lib/postgresql/data postgres:16</pre>
+    </section>
+
+    <!-- Slide 14 -->
+    <section class="slide" data-title="Demo 2">
+      <div class="kicker"><span class="dot"></span> Demo 2</div>
+      <h2>Postgres con volumen + red</h2>
+      <p>Objetivo: BD persistente y accesible desde otro contenedor (DNS interno).</p>
+      <pre><span>1) Red</span>
+docker network create micro-net
+
+<span>2) Volumen</span>
+docker volume create pgdata
+
+<span>3) Levantar Postgres</span>
+docker run -d --name db --network micro-net \
+  -e POSTGRES_PASSWORD=postgres \
+  -v pgdata:/var/lib/postgresql/data \
+  -p 5432:5432 postgres:16
+
+<span>4) Probar conexión desde otro contenedor</span>
+docker run -it --rm --network micro-net postgres:16 \
+  psql -h db -U postgres</pre>
+    </section>
+
+    <!-- Slide 15 -->
+    <section class="slide" data-title="Limpieza">
+      <div class="kicker"><span class="dot"></span> Mantenimiento</div>
+      <h2>Limpieza y buenas prácticas</h2>
+      <ul>
+        <li>Estado: <code>docker ps</code>, <code>docker images</code></li>
+        <li>Detener/remover: <code>docker stop</code>, <code>docker rm</code></li>
+        <li>Revisar disco: <code>docker system df</code></li>
+        <li>Limpiar recursos no usados: <code>docker system prune</code> <span class="muted">(cuidado)</span></li>
+        <li>Nombrar recursos: <code>--name</code>, <code>--network</code></li>
+      </ul>
+    </section>
+
+    <!-- Slide 16 -->
+    <section class="slide" data-title="Errores">
+      <div class="kicker"><span class="dot"></span> Troubleshooting</div>
+      <h2>Errores comunes y diagnóstico</h2>
+      <ul>
+        <li><strong>Port already in use</strong> → cambiar el puerto del host: <code>-p 3001:3000</code></li>
+        <li><strong>Cannot connect to db</strong> → revisar red, hostname (<code>db</code>), variables</li>
+        <li><strong>Permission denied</strong> con volúmenes → revisar usuario/ruta</li>
+        <li><strong>Build lento</strong> → cache + <code>.dockerignore</code></li>
+      </ul>
+      <div class="card">
+        <h3>Comandos útiles</h3>
+        <pre>docker logs -f api
+docker exec -it api sh
+docker inspect api</pre>
+      </div>
+    </section>
+
+    <!-- Slide 17 -->
+    <section class="slide" data-title="Compose (preview)">
+      <div class="kicker"><span class="dot"></span> Puente a Compose</div>
+      <h2>¿Dónde entra Docker Compose?</h2>
+      <ul>
+        <li>Describe múltiples servicios en un archivo YAML</li>
+        <li>Define redes/volúmenes/variables de forma declarativa</li>
+        <li>Ideal para microservicios locales (db + api + redis…)</li>
+        <li>Hoy: base conceptual; en el taller lo usamos para orquestar</li>
+      </ul>
+      <pre><span>Comandos base</span>
+docker compose up --build
+docker compose ps
+docker compose logs -f
+docker compose down</pre>
+    </section>
+
+    <!-- Slide 18 -->
+    <section class="slide" data-title="Cierre">
+      <div class="kicker"><span class="dot"></span> Cierre</div>
+      <h2>Resumen + siguiente paso</h2>
+      <ul>
+        <li>Imágenes y contenedores: build/run</li>
+        <li>Puertos: host vs contenedor</li>
+        <li>Redes: comunicación por hostname (DNS interno)</li>
+        <li>Volúmenes: persistencia</li>
+        <li><strong>Tarea:</strong> mini-entorno API + Postgres con Compose</li>
+      </ul>
+      <div class="card">
+        <h3>Atajos</h3>
+        <p class="hint">Navega con <span class="kbd">←</span> <span class="kbd">→</span> o <span class="kbd">Espacio</span> · Presiona <span class="kbd">F</span> para pantalla completa</p>
+      </div>
+    </section>
+
+    <!-- HUD / Controls -->
+    <div class="hud">
+      <div class="left">
+        <button class="btn" id="prevBtn" title="Anterior (←)">
+          ◀ <span>Anterior</span>
+        </button>
+        <button class="btn" id="nextBtn" title="Siguiente (→ / Espacio)">
+          <span>Siguiente</span> ▶
+        </button>
+      </div>
+
+      <div class="progress" aria-live="polite">
+        <div class="bar" aria-hidden="true"><span id="barFill"></span></div>
+        <div>
+          <div><span id="counter">1</span>/<span id="total">1</span> · <span id="title">Portada</span></div>
+          <div class="hint">Teclas: <span class="kbd">←</span><span class="kbd">→</span> <span class="kbd">Espacio</span> <span class="kbd">Home</span>/<span class="kbd">End</span> <span class="kbd">F</span></div>
+        </div>
+      </div>
+
+      <div class="right">
+        <button class="btn" id="overviewBtn" title="Vista general (O)">
+          ☐ <span>Vista</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    (function(){
+      const slides = Array.from(document.querySelectorAll('.slide'));
+      const total = slides.length;
+
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const overviewBtn = document.getElementById('overviewBtn');
+
+      const counter = document.getElementById('counter');
+      const totalEl = document.getElementById('total');
+      const titleEl = document.getElementById('title');
+      const barFill = document.getElementById('barFill');
+
+      totalEl.textContent = total;
+
+      let index = 0;
+      let overview = false;
+
+      function show(i){
+        index = Math.max(0, Math.min(total - 1, i));
+        slides.forEach((s, idx) => {
+          s.classList.toggle('active', idx === index);
+          s.style.zIndex = (idx === index) ? 2 : 1;
+        });
+
+        const t = slides[index].getAttribute('data-title') || '';
+        counter.textContent = (index + 1);
+        titleEl.textContent = t;
+        barFill.style.width = ((index + 1) / total * 100).toFixed(2) + '%';
+        history.replaceState(null, '', '#'+(index+1));
+      }
+
+      function next(){ show(index + 1); }
+      function prev(){ show(index - 1); }
+
+      function toggleOverview(){
+        overview = !overview;
+        const deck = document.getElementById('deck');
+
+        if(overview){
+          // show all slides as grid thumbnails
+          deck.style.overflow = 'auto';
+          deck.style.alignItems = 'flex-start';
+          deck.style.justifyContent = 'flex-start';
+          deck.style.paddingTop = '18px';
+
+          slides.forEach((s, idx) => {
+            s.classList.add('active');
+            s.style.position = 'relative';
+            s.style.opacity = '1';
+            s.style.transform = 'none';
+            s.style.pointerEvents = 'auto';
+            s.style.width = 'min(520px, 96vw)';
+            s.style.height = 'auto';
+            s.style.minHeight = '360px';
+            s.style.margin = '10px';
+            s.style.display = 'block';
+            s.style.cursor = 'pointer';
+            s.onclick = () => {
+              // exit overview and jump
+              toggleOverview();
+              show(idx);
+            };
+          });
+
+          deck.style.flexWrap = 'wrap';
+          deck.style.display = 'flex';
+        }else{
+          // restore single-slide view
+          const deck = document.getElementById('deck');
+          deck.style.overflow = 'hidden';
+          deck.style.display = 'flex';
+          deck.style.flexWrap = 'nowrap';
+          deck.style.alignItems = 'center';
+          deck.style.justifyContent = 'center';
+          deck.style.paddingTop = '';
+
+          slides.forEach((s) => {
+            s.style.position = 'absolute';
+            s.style.width = '';
+            s.style.height = '';
+            s.style.minHeight = '';
+            s.style.margin = '';
+            s.style.cursor = '';
+            s.onclick = null;
+            s.style.display = 'flex';
+          });
+
+          show(index);
+        }
+      }
+
+      function requestFullscreen(){
+        const el = document.documentElement;
+        if(!document.fullscreenElement){
+          if(el.requestFullscreen) el.requestFullscreen();
+        }else{
+          if(document.exitFullscreen) document.exitFullscreen();
+        }
+      }
+
+      prevBtn.addEventListener('click', prev);
+      nextBtn.addEventListener('click', next);
+      overviewBtn.addEventListener('click', toggleOverview);
+
+      document.addEventListener('keydown', (e) => {
+        if(e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'){
+          e.preventDefault();
+          if(!overview) next();
+        }
+        if(e.key === 'ArrowLeft' || e.key === 'PageUp'){
+          e.preventDefault();
+          if(!overview) prev();
+        }
+        if(e.key === 'Home'){
+          e.preventDefault();
+          if(!overview) show(0);
+        }
+        if(e.key === 'End'){
+          e.preventDefault();
+          if(!overview) show(total - 1);
+        }
+        if(e.key.toLowerCase() === 'f'){
+          e.preventDefault();
+          requestFullscreen();
+        }
+        if(e.key.toLowerCase() === 'o'){
+          e.preventDefault();
+          toggleOverview();
+        }
+        if(e.key === 'Escape' && overview){
+          toggleOverview();
+        }
+      });
+
+      // Jump to hash (#n)
+      const hash = window.location.hash.replace('#','');
+      const n = parseInt(hash, 10);
+      if(!Number.isNaN(n) && n >= 1 && n <= total){
+        show(n - 1);
+      }else{
+        show(0);
+      }
+    })();
+  </script>
+</body>
+</html>
