@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # SERVICIO 1: Tu API en Node.js
+  api:
+    build: ./david-avilez/api
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_USER=postgres
+      - DB_PASSWORD=secreto123
+      - DB_HOST=db  # Conexión por nombre de servicio (Requisito de la tarea)
+      - DB_NAME=tododb
+      - DB_PORT=5432
+      - PORT=3000
+    networks:
+      - micro-net
+    depends_on:
+      - db
+
+  # SERVICIO 2: La Base de Datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secreto123
+      - POSTGRES_DB=tododb
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Persistencia mediante volumen
+    networks:
+      - micro-net
+
+# Definición de la red privada (Requisito de la tarea)
+networks:
+  micro-net:
+    driver: bridge
+
+# Definición del volumen para que los datos no se borren (Requisito de la tarea)
+volumes:
+  pgdata:
