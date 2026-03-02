@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tasks — Lista de tareas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <header class="header">
+        <h1>Tasks</h1>
+        <p class="tagline">Gestiona tus tareas en un solo lugar</p>
+        <div class="status" id="api-status" aria-live="polite">
+          <span class="status-dot"></span>
+          <span class="status-text">Comprobando conexión…</span>
+        </div>
+      </header>
+
+      <main class="main">
+        <section class="add-task">
+          <form id="form-add" class="form-add" autocomplete="off">
+            <input
+              type="text"
+              id="input-title"
+              class="input-title"
+              placeholder="¿Qué tienes que hacer?"
+              required
+              maxlength="280"
+            />
+            <button type="submit" class="btn btn-primary">Añadir</button>
+          </form>
+        </section>
+
+        <section class="tasks-section">
+          <h2 class="tasks-title">Mis tareas</h2>
+          <ul id="tasks-list" class="tasks-list" aria-label="Lista de tareas">
+            <!-- Se rellena con JS -->
+          </ul>
+          <p id="empty-state" class="empty-state" hidden>
+            No hay tareas. Añade una arriba.
+          </p>
+          <p id="error-state" class="error-state" hidden></p>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>
+          cumple con tus tareas vago
+        </p>
+      </footer>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
