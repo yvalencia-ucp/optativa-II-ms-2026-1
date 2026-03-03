@@ -1,0 +1,46 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-todos}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pass123}
+      POSTGRES_DB: ${DB_NAME:-todos_db}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-todos} -d ${DB_NAME:-todos_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+      start_period: 5s
+    networks:
+      - micro-net
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile   # quítalo si NO tienes Dockerfile personalizado
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-todos}
+      - DB_PASSWORD=${DB_PASSWORD:-pass123}
+      - DB_NAME=${DB_NAME:-todos_db}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - micro-net
+    restart: unless-stopped
+
+networks:
+  micro-net:
+    driver: bridge
+
+volumes:
+  pgdata:
