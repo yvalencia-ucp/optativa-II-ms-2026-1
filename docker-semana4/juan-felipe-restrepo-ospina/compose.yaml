@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: todosdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - micro-net
+
+  api:
+    build: ./api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: todosdb
+    networks:
+      - micro-net
+
+volumes:
+  pgdata:
+
+networks:
+  micro-net:
