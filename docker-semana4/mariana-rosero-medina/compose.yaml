@@ -1,0 +1,35 @@
+services:
+  db:
+    # Aquí configuraremos la base de datos
+    image: postgres:15-alpine # Usamos una versión ligera de postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: tareas_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Aquí conectamos el volumen
+    networks:
+      - micro-net # Conectamos la BD a nuestra red privadad
+  api:
+    # Aquí configuraremos nuestra API de Node
+    build: ./api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    restart: on-failure
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=admin
+      - DB_PASS=password123
+      - DB_NAME=tareas_db
+    networks:
+      - micro-net
+
+# Declaramos la red y el volumen al final
+networks:
+  micro-net:
+
+volumes:
+  pgdata:
