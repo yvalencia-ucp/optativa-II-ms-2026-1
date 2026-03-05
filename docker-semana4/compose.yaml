@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # SERVICIO 1: Tu API en Node.js
   api:
-    build: ./david-avilez/api
+    build: ./david.avilez
     ports:
       - "3000:3000"
     environment:
