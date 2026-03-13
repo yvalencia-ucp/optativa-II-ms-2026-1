@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # 1. Nuestro servicio de Base de Datos
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - micro-net
+
+  # 2. Nuestro servicio de API
+  api:
+    build: ./api # Le dice a Docker que busque el Dockerfile en la carpeta api/
+    container_name: node_api
+    ports:
+      - "${API_EXTERNAL_PORT}:${API_INTERNAL_PORT}"
+    environment:
+      # ¡Aquí está la magia! El host es el nombre del servicio de arriba ("db")
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      PORT: ${API_INTERNAL_PORT}
+    depends_on:
+      - db # Le dice que espere a que la BD inicie primero
+    networks:
+      - micro-net
+
+# 3. Declaramos la red privada que pide el taller
+networks:
+  micro-net:
+
+# 4. Declaramos el volumen para que no se borren tus datos si apagas el contenedor
+volumes:
+  pgdata:
